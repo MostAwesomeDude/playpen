@@ -1,2 +1,2 @@
 # playpen
-Playground in Monte
+A playground in Monte.
