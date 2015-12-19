@@ -7,7 +7,8 @@ def [=> makeDebugResource :DeepFrozen,
      => makeResourceApp :DeepFrozen,
      => smallBody :DeepFrozen] | _ := import("lib/http/resource")
 
-def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unittest) as DeepFrozen:
+def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
+         => unittest) as DeepFrozen:
     def [=> makeHTTPEndpoint] | _ := import("lib/http/server", [=> unittest])
     def [=> PercentEncoding] | _ := import("lib/codec/percent", [=> unittest])
     def [=> UTF8] | _ := import.script("lib/codec/utf8")
@@ -35,15 +36,19 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unittest) as DeepFroze
         def results := escape ej {
             def =="POST" exit ej := verb
             def [=> moduleSource] | _ exit ej := getForm(request, ej)
+            # Forms usually use Windows lines, but we need UNIX lines.
+            def massagedSource := moduleSource.replace("\r\n", "\n")
             try {
-                def result := eval(moduleSource, [].asMap())
+                def result := eval(massagedSource, [].asMap())
                 tag.div(
                     tag.h2("Evaluated result"),
                     tag.p(`$result`))
-            } catch problem {
+            } catch via (unsealException) [problem, backtrace] {
                 tag.div(
                     tag.h2("Error during evaluation"),
-                    tag.p(`$problem`))
+                    tag.p(`$problem`),
+                    tag.h3("Backtrace"),
+                    tag.ul([for frame in (backtrace) tag.li(`$frame`)]))
             }
         } catch _ {tag.div(tag.h2("Nothing posted"))}
         def report := tag.div(
