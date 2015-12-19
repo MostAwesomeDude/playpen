@@ -32,7 +32,20 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unittest) as DeepFroze
         def verb := request.getVerb()
         def headers := request.getHeaders()
         def body := request.getBody()
-        def form := escape ej {getForm(request, ej)} catch _ {null}
+        def results := escape ej {
+            def =="POST" exit ej := verb
+            def [=> moduleSource] | _ exit ej := getForm(request, ej)
+            try {
+                def result := eval(moduleSource, [].asMap())
+                tag.div(
+                    tag.h2("Evaluated result"),
+                    tag.p(`$result`))
+            } catch problem {
+                tag.div(
+                    tag.h2("Error during evaluation"),
+                    tag.p(`$problem`))
+            }
+        } catch _ {tag.div(tag.h2("Nothing posted"))}
         def report := tag.div(
             tag.h2("Resource"),
             tag.p(`$resource`),
@@ -41,15 +54,14 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unittest) as DeepFroze
             tag.h2("Headers"),
             tag.p(`$headers`),
             tag.h2("Body"),
-            tag.p(`$body`),
-            tag.h2("Body as Form"),
-            tag.p(`$form`))
+            tag.p(`$body`))
         return smallBody(`<!DOCTYPE html>
         <body>
         <form action="/" method="POST">
             <textarea name="moduleSource"></textarea>
             <input type="submit" value="Go!" />
         </form>
+        $results
         $report
         </body>
         `)
