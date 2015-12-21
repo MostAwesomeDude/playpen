@@ -7,6 +7,27 @@ def [=> makeDebugResource :DeepFrozen,
      => makeResourceApp :DeepFrozen,
      => smallBody :DeepFrozen] | _ := import("lib/http/resource")
 
+def makeLogger() as DeepFrozen:
+    def lines := [].diverge()
+
+    return object logger:
+        to log(line :Str):
+            lines.push(line)
+
+        to getLines() :List[Str]:
+            return lines.snapshot()
+
+        to makeTrace():
+            return object traceln:
+                match [=="run", items, _]:
+                    def rv := [].diverge()
+                    for item in items:
+                        if (item =~ s :Str):
+                            rv.push(s)
+                        else:
+                            rv.push(M.toString(item))
+                    lines.push("".join(rv))
+
 def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
          => unittest) as DeepFrozen:
     def [=> makeHTTPEndpoint] | _ := import("lib/http/server", [=> unittest])
@@ -33,23 +54,36 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
         def verb := request.getVerb()
         def headers := request.getHeaders()
         def body := request.getBody()
+
+        def logger := makeLogger()
+        def environment := [
+            "traceln" => {def t := logger.makeTrace(); &&t},
+        ]
+
         def results := escape ej {
             def =="POST" exit ej := verb
             def [=> moduleSource] | _ exit ej := getForm(request, ej)
             # Forms usually use Windows lines, but we need UNIX lines.
             def massagedSource := moduleSource.replace("\r\n", "\n")
-            try {
-                def result := eval(massagedSource, [].asMap())
-                tag.div(
+            def firstPart := try {
+                def result := eval(massagedSource, environment)
+                [
                     tag.h2("Evaluated result"),
-                    tag.p(`$result`))
+                    tag.p(`$result`),
+                ]
             } catch via (unsealException) [problem, backtrace] {
-                tag.div(
+                [
                     tag.h2("Error during evaluation"),
                     tag.p(`$problem`),
                     tag.h3("Backtrace"),
-                    tag.ul([for frame in (backtrace) tag.li(`$frame`)]))
+                    tag.ul([for frame in (backtrace) tag.li(`$frame`)]),
+                ]
             }
+            tag.div(
+                firstPart,
+                tag.h2("Trace log"),
+                tag.ul([for line in (logger.getLines()) tag.li(`$line`)])
+            )
         } catch _ {tag.div(tag.h2("Nothing posted"))}
         def report := tag.div(
             tag.h2("Resource"),
