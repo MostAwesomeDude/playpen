@@ -19,6 +19,7 @@ def makeLogger() as DeepFrozen:
 
         to makeTrace():
             return object traceln:
+                "Write a line to the trace log."
                 match [=="run", items, _]:
                     def rv := [].diverge()
                     for item in items:
@@ -60,6 +61,12 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
             "traceln" => {def t := logger.makeTrace(); &&t},
         ]
 
+        def envHelp := tag.ul(
+            [for name => &&obj in (environment)
+             tag.li(tag.em(name),
+                    `: ${obj._getAllegedInterface().getDocstring()}`,
+             )])
+
         def results := escape ej {
             def =="POST" exit ej := verb
             def [=> moduleSource] | _ exit ej := getForm(request, ej)
@@ -82,7 +89,9 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
             tag.div(
                 firstPart,
                 tag.h2("Trace log"),
-                tag.ul([for line in (logger.getLines()) tag.li(`$line`)])
+                tag.ul([for line in (logger.getLines()) tag.li(`$line`)]),
+                tag.h2("Available objects"),
+                envHelp,
             )
         } catch _ {tag.div(tag.h2("Nothing posted"))}
         def report := tag.div(
