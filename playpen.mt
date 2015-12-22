@@ -51,16 +51,17 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
             m[f(k)] := f(v)
         return m.snapshot()
 
+    var environment := [for `&&@k` => v in (safeScope) k => v]
+
     def formWorker(resource, request):
         def verb := request.getVerb()
         def headers := request.getHeaders()
         def body := request.getBody()
 
         def logger := makeLogger()
-        def environment := [
-            "traceln" => {def t := logger.makeTrace(); &&t},
-        ]
 
+        # Patch traceln().
+        environment with= ("traceln", {def t := logger.makeTrace(); &&t})
         def envHelp := tag.ul(
             [for name => &&obj in (environment)
              tag.li(tag.em(name),
@@ -104,6 +105,7 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
             tag.h2("Body"),
             tag.p(`$body`))
         return smallBody(`<!DOCTYPE html>
+        <meta charset="utf-8" />
         <body>
         <form action="/" method="POST">
             <textarea name="moduleSource"></textarea>
