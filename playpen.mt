@@ -63,7 +63,7 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
         # Patch traceln().
         environment with= ("traceln", {def t := logger.makeTrace(); &&t})
         def envHelp := tag.ul(
-            [for name => &&obj in (environment)
+            [for name => &&obj in (environment.sortKeys())
              tag.li(tag.em(name),
                     `: ${obj._getAllegedInterface().getDocstring()}`,
              )])
