@@ -108,7 +108,7 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
         <meta charset="utf-8" />
         <body>
         <form action="/" method="POST">
-            <textarea name="moduleSource"></textarea>
+            <textarea name="moduleSource" cols="80" rows="30"></textarea>
             <input type="submit" value="Go!" />
         </form>
         $results
