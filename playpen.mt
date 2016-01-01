@@ -7,6 +7,15 @@ def [=> makeDebugResource :DeepFrozen,
      => makeResourceApp :DeepFrozen,
      => smallBody :DeepFrozen] | _ := import("lib/http/resource")
 
+def tagExpr(expr, _, args, _) as DeepFrozen:
+    "Create some pretty HTML for a Monte expression."
+
+    return switch (expr.getNodeName()):
+        match =="NounExpr":
+            tag.a(expr.getName())
+        match ex:
+            tag.span(`$expr`)
+
 def makeLogger() as DeepFrozen:
     def lines := [].diverge()
 
@@ -73,8 +82,9 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
             def [=> moduleSource] | _ exit ej := getForm(request, ej)
             # Forms usually use Windows lines, but we need UNIX lines.
             def massagedSource := moduleSource.replace("\r\n", "\n")
+            def expr := m__quasiParser.fromStr(massagedSource)
             def firstPart := try {
-                def result := eval(massagedSource, environment)
+                def result := eval(expr, environment)
                 [
                     tag.h2("Evaluated result"),
                     tag.p(`$result`),
@@ -88,6 +98,10 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
                 ]
             }
             tag.div(
+                tag.h2("Source"),
+                tag.pre(massagedSource),
+                tag.h2("Kernel Source"),
+                tag.pre(expr.transform(tagExpr)),
                 firstPart,
                 tag.h2("Trace log"),
                 tag.ul([for line in (logger.getLines()) tag.li(`$line`)]),
