@@ -11,10 +11,50 @@ def tagExpr(expr, _, args, _) as DeepFrozen:
     "Create some pretty HTML for a Monte expression."
 
     return switch (expr.getNodeName()):
+        match =="DefExpr":
+            def start := if (expr.getPattern().getNodeName() == "VarPattern") {
+                ""
+            } else {
+                "def "
+            }
+            def exit_ := if (expr.getExit() == null) {
+                ""
+            } else {
+                `exit ${args[1]}`
+            }
+            tag.span(start, args[0], exit_, " := ", args[2])
+        match =="EscapeExpr":
+            tag.span("escape ", args[0], "{\n", args[1], "} catch ", args[2],
+                     " {", args[3], "}\n")
+        match =="LiteralExpr":
+            tag.span(M.toQuote(expr.getValue()))
+        match =="MethodCallExpr":
+            def posArgs := [", "].join(args[2])
+            tag.span(args[0], ".", args[1], "(", posArgs, args[3], ")")
         match =="NounExpr":
-            tag.a(expr.getName())
+            def name :Str := expr.getName()
+            tag.a(name, "href" => `#$name`)
+        match =="SeqExpr":
+            tag.span(["\n"].join(args[0]))
+        match =="FinalPattern":
+            def name :Str := expr.getNoun().getName()
+            var rv := tag.span(name, "id" => name)
+            if (expr.getGuard() != null):
+                rv := tag.span(rv, " :", args[1])
+            rv
+        match =="ListPattern":
+            # XXX tail
+            tag.span("[", [", "].join(args[0]), "]")
+        match =="VarPattern":
+            def name :Str := expr.getNoun().getName()
+            var rv := tag.span(`var $name`, "id" => name)
+            if (expr.getGuard() != null):
+                rv := tag.span(rv, " :", args[1])
+            rv
+        match =="ViaPattern":
+            tag.span("via (", args[0], ") ", args[1])
         match ex:
-            tag.span(`$expr`)
+            tag.span(`Do $ex next!`)
 
 def makeLogger() as DeepFrozen:
     def lines := [].diverge()
@@ -73,7 +113,7 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
         environment with= ("traceln", {def t := logger.makeTrace(); &&t})
         def envHelp := tag.ul(
             [for name => &&obj in (environment.sortKeys())
-             tag.li(tag.em(name),
+             tag.li(tag.em(name, "id" => name),
                     `: ${obj._getAllegedInterface().getDocstring()}`,
              )])
 
