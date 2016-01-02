@@ -122,27 +122,33 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
             def [=> moduleSource] | _ exit ej := getForm(request, ej)
             # Forms usually use Windows lines, but we need UNIX lines.
             def massagedSource := moduleSource.replace("\r\n", "\n")
-            def expr := m__quasiParser.fromStr(massagedSource)
-            def firstPart := try {
-                def result := eval(expr, environment)
-                [
-                    tag.h2("Evaluated result"),
-                    tag.p(`$result`),
+            def secondPart := try {
+                def expr := m__quasiParser.fromStr(massagedSource)
+                def firstPart := try {
+                    def result := eval(expr, environment)
+                    [
+                        tag.h2("Evaluated result"),
+                        tag.p(`$result`),
+                    ]
+                } catch via (unsealException) [problem, backtrace] {
+                    [
+                        tag.h2("Error during evaluation"),
+                        tag.p(`$problem`),
+                        tag.h3("Backtrace"),
+                        tag.ul([for frame in (backtrace) tag.li(`$frame`)]),
+                    ]
+                }
+                firstPart + [
+                    tag.h2("Kernel Source"),
+                    tag.pre(expr.transform(tagExpr)),
                 ]
             } catch via (unsealException) [problem, backtrace] {
-                [
-                    tag.h2("Error during evaluation"),
-                    tag.p(`$problem`),
-                    tag.h3("Backtrace"),
-                    tag.ul([for frame in (backtrace) tag.li(`$frame`)]),
-                ]
+                [tag.h2("Parse Error"), tag.pre(`$problem`)]
             }
             tag.div(
                 tag.h2("Source"),
                 tag.pre(massagedSource),
-                tag.h2("Kernel Source"),
-                tag.pre(expr.transform(tagExpr)),
-                firstPart,
+                secondPart,
                 tag.h2("Trace log"),
                 tag.ul([for line in (logger.getLines()) tag.li(`$line`)]),
                 tag.h2("Available objects"),
