@@ -1,11 +1,10 @@
-imports
 exports (main)
 
-def [=> tag :DeepFrozen] | _ := import("lib/http/tag")
+def [=> tag :DeepFrozen] | _ := ::"import"("lib/http/tag")
 def [=> makeDebugResource :DeepFrozen,
      => makeResource :DeepFrozen,
      => makeResourceApp :DeepFrozen,
-     => smallBody :DeepFrozen] | _ := import("lib/http/resource")
+     => smallBody :DeepFrozen] | _ := ::"import"("lib/http/resource")
 
 def tagExpr(expr, _, args, _) as DeepFrozen:
     "Create some pretty HTML for a Monte expression."
@@ -80,10 +79,10 @@ def makeLogger() as DeepFrozen:
 
 def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
          => unittest) as DeepFrozen:
-    def [=> makeHTTPEndpoint] | _ := import("lib/http/server", [=> unittest])
-    def [=> PercentEncoding] | _ := import("lib/codec/percent", [=> unittest])
-    def [=> UTF8] | _ := import.script("lib/codec/utf8")
-    def [=> composeCodec] | _ := import("lib/codec")
+    def [=> makeHTTPEndpoint] | _ := ::"import"("lib/http/server", [=> unittest])
+    def [=> PercentEncoding] | _ := ::"import"("lib/codec/percent", [=> unittest])
+    def [=> UTF8] | _ := ::"import".script("lib/codec/utf8")
+    def [=> composeCodec] | _ := ::"import"("lib/codec")
 
     def UTF8Percent := composeCodec(PercentEncoding, UTF8)
 
