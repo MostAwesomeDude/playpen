@@ -1,10 +1,9 @@
+import "lib/http/tag" =~ [=> tag :DeepFrozen]
+import "lib/http/resource" =~ [=> makeDebugResource :DeepFrozen,
+                               => makeResource :DeepFrozen,
+                               => makeResourceApp :DeepFrozen,
+                               => smallBody :DeepFrozen]
 exports (main)
-
-def [=> tag :DeepFrozen] | _ := ::"import"("lib/http/tag")
-def [=> makeDebugResource :DeepFrozen,
-     => makeResource :DeepFrozen,
-     => makeResourceApp :DeepFrozen,
-     => smallBody :DeepFrozen] | _ := ::"import"("lib/http/resource")
 
 def tagExpr(expr, _, args, _) as DeepFrozen:
     "Create some pretty HTML for a Monte expression."
@@ -76,6 +75,48 @@ def makeLogger() as DeepFrozen:
                         else:
                             rv.push(M.toString(item))
                     lines.push("".join(rv))
+
+def truthTableWorker(resource, request) as DeepFrozen:
+    def items := [true, false, 1, 0, -1, "1", "0", "-1", null, [], [1],
+                  ["monte"], "monte", "", NaN]
+
+    def tableMaker(func, head, label):
+        def h1 := tag.h1(head)
+        def headers := tag.tr(tag.th(label), [for item in (items)
+                                              tag.th(M.toQuote(item))])
+        def rows := [for i => left in (items) tag.tr(tag.th(M.toQuote(left)),
+                     [for j => right in (items) {
+                         def b := func(left, right)
+                         tag.td(`$b`, "class" => (i <=> j).pick("eq", `$b`))
+                      }])]
+        return tag.div(h1, tag.table(headers, rows))
+
+    def eqTable := tableMaker(fn left, right {left == right},
+                              "Equality Relation", "==")
+    def asBigAs(left, right):
+        return try:
+            left <=> right
+        catch _:
+            "error"
+    def asBigAsTable := tableMaker(asBigAs, "As-Big-As Relation", "<=>")
+
+    def body := tag.body("I blame ",
+                         tag.a("_habnabit", "href" => "https://habnab.it/php-table.html"),
+                         " for this silliness.",
+                         eqTable, asBigAsTable)
+    return smallBody(`<!DOCTYPE html>
+    <head>
+    <title>Monte Truth Table</title>
+    <style type="text/css">
+    table tr > * { padding: .3em; width: 4em; height: 2em; text-align: center; }
+    .true { background: #afa; }
+    .false { background: #faf; }
+    .eq { background: #aaf; }
+    .error { background: #faa; }
+    th { font-weight: normal; font-family: monospace; background: #ddf; }
+    </style>
+    </head>
+    $body`)
 
 def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
          => unittest) as DeepFrozen:
@@ -176,7 +217,8 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
         `)
 
     def debug := makeDebugResource(currentRuntime)
-    def root := makeResource(formWorker, [=> debug])
+    def truthTable := makeResource(truthTableWorker, [].asMap())
+    def root := makeResource(formWorker, [=> debug, => truthTable])
 
     def port :Int := 8080
     def endpoint := makeHTTPEndpoint(makeTCP4ServerEndpoint(port))
