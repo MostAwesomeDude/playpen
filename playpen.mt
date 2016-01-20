@@ -77,15 +77,21 @@ def makeLogger() as DeepFrozen:
                     lines.push("".join(rv))
 
 def truthTableWorker(resource, request) as DeepFrozen:
-    def items := [true, false, 1, 0, -1, "1", "0", "-1", null, [], [1],
+    # We need to declare these lists twice. If we don't, then we run into a
+    # fun problem where the equality relation uses identity checks and doesn't
+    # consider the values of the objects. This is true on Typhon and probably
+    # on nearly any other compliant VM. ~ C.
+    def lefts := [true, false, 1, 0, -1, "1", "0", "-1", null, [], [1],
                   ["monte"], "monte", "", NaN]
+    def rights := [true, false, 1, 0, -1, "1", "0", "-1", null, [], [1],
+                   ["monte"], "monte", "", NaN]
 
     def tableMaker(func, head, label):
         def h1 := tag.h1(head)
-        def headers := tag.tr(tag.th(label), [for item in (items)
+        def headers := tag.tr(tag.th(label), [for item in (lefts)
                                               tag.th(M.toQuote(item))])
-        def rows := [for i => left in (items) tag.tr(tag.th(M.toQuote(left)),
-                     [for j => right in (items) {
+        def rows := [for i => left in (lefts) tag.tr(tag.th(M.toQuote(left)),
+                     [for j => right in (rights) {
                          def b := func(left, right)
                          tag.td(`$b`, "class" => (i <=> j).pick("eq", `$b`))
                       }])]
