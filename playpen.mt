@@ -3,6 +3,10 @@ import "lib/http/resource" =~ [=> makeDebugResource :DeepFrozen,
                                => makeResource :DeepFrozen,
                                => makeResourceApp :DeepFrozen,
                                => smallBody :DeepFrozen]
+import "lib/http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
+import "lib/codec" =~ [=> composeCodec :DeepFrozen]
+import "lib/codec/percent" =~ [=> PercentEncoding :DeepFrozen]
+import "lib/codec/utf8" =~ [=> UTF8 :DeepFrozen]
 exports (main)
 
 def tagExpr(expr, _, args, _) as DeepFrozen:
@@ -126,11 +130,6 @@ def truthTableWorker(resource, request) as DeepFrozen:
 
 def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
          => unittest) as DeepFrozen:
-    def [=> makeHTTPEndpoint] | _ := ::"import"("lib/http/server", [=> unittest])
-    def [=> PercentEncoding] | _ := ::"import"("lib/codec/percent", [=> unittest])
-    def [=> UTF8] | _ := ::"import".script("lib/codec/utf8")
-    def [=> composeCodec] | _ := ::"import"("lib/codec")
-
     def UTF8Percent := composeCodec(PercentEncoding, UTF8)
 
     def getForm(request, ej):
