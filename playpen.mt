@@ -9,6 +9,8 @@ import "lib/codec/percent" =~ [=> PercentEncoding :DeepFrozen]
 import "lib/codec/utf8" =~ [=> UTF8 :DeepFrozen]
 exports (main)
 
+traceln(`Playpen is being imported...`)
+
 def tagExpr(expr, _, args, _) as DeepFrozen:
     "Create some pretty HTML for a Monte expression."
 
@@ -128,8 +130,10 @@ def truthTableWorker(resource, request) as DeepFrozen:
     </head>
     $body`)
 
-def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
+def main(argv,
+         => currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
          => unittest) as DeepFrozen:
+    traceln(`Head of main`)
     def UTF8Percent := composeCodec(PercentEncoding, UTF8)
 
     def getForm(request, ej):
@@ -229,5 +233,7 @@ def main(=> currentRuntime, => makeTCP4ServerEndpoint, => unsealException,
     def endpoint := makeHTTPEndpoint(makeTCP4ServerEndpoint(port))
     def app := makeResourceApp(root)
     endpoint.listen(app)
+
+    traceln(`Tail of main`)
 
     return 0
