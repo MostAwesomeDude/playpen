@@ -1,18 +1,13 @@
-{stdenv, lib, typhonVm, mast}:
+{ typhon }:
 
-stdenv.mkDerivation {
+let
+  playpen = typhon.montePackage rec {
     name = "playpen";
-    buildInputs = [ typhonVm mast ];
-    buildPhase = ''
-      ${typhonVm}/mt-typhon -l ${mast}/mast ${mast}/mast/montec -mix -format mast $src/playpen.mt playpen.mast
-      '';
-    installPhase = ''
-      mkdir -p $out/bin
-      cp playpen.mast $out/
-      echo "${typhonVm}/mt-typhon -l ${mast}/mast $out/playpen \"\$@\"" > $out/bin/playpen
-      chmod +x $out/bin/playpen
-      '';
-    doCheck = false;
+    version = "0.0.0.0";
+    entrypoints = [ "playpen" ];
     # Cargo-culted.
     src = builtins.filterSource (path: type: baseNameOf path == "playpen.mt") ./.;
-}
+  };
+  mtpkg = { monte-playpen = playpen; };
+in
+  playpen
