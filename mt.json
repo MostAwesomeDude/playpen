@@ -1,0 +1,6 @@
+{
+    "name": "playpen",
+    "paths": ["."],
+    "entrypoint": "playpen",
+    "dependencies": {}
+}
